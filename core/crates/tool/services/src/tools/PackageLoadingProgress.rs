@@ -1,5 +1,6 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
+#[cfg(not(target_arch = "wasm32"))]
 use std::time::Duration;
 
 use operit_store::PreferencesDataStore::{mutableStateFlow, MutableStateFlow, StateFlow};
@@ -250,6 +251,16 @@ pub fn completePluginLoadingSession() {
         }
         progress.forceExpanded = false;
     });
-    std::thread::sleep(Duration::from_millis(120));
+    holdCompletedPluginLoadingOverlay();
     skipPluginLoading();
 }
+
+/// Briefly holds the completed overlay so the final state stays visible before hiding.
+#[cfg(not(target_arch = "wasm32"))]
+fn holdCompletedPluginLoadingOverlay() {
+    std::thread::sleep(Duration::from_millis(120));
+}
+
+/// Skips the completion hold on Wasm, where blocking the event loop is not permitted.
+#[cfg(target_arch = "wasm32")]
+fn holdCompletedPluginLoadingOverlay() {}
